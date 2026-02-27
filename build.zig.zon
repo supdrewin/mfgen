@@ -1,0 +1,7 @@
+.{
+    .name = .mfgen,
+    .version = "0.2.0",
+    .minimum_zig_version = "0.16.0-dev.2905+5d71e3051",
+    .paths = .{""},
+    .fingerprint = 0x46d5e22646da95ea,
+}
