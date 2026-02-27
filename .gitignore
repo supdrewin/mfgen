@@ -2,4 +2,6 @@ asset/
 target/
 
 .DS_Store
+patch.exe
+patch.pdb
 patch.js

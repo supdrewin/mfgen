@@ -26,6 +26,17 @@ fn main() -> anyhow::Result<()> {
     patch.write_fmt(format_args!("\t\t\t\t\tif (this.drawables.parentPartIndices[i] < 0) opacities[i] = 0;\n"))?;
     patch.write_fmt(format_args!("\t\t\t\t}});\n"))?;
     patch.write_fmt(format_args!("\t\t\t}};\n"))?;
+    patch.write_fmt(format_args!("\t\t}} else if (fileName == \"ys_suxi.model3.json\") {{\n"))?;
+    patch.write_fmt(format_args!("\t\t\tLive2DCubismCore.Model.prototype._update ??= Live2DCubismCore.Model.prototype.update;\n"))?;
+    patch.write_fmt(format_args!("\t\t\tLive2DCubismCore.Model.prototype.update = function () {{\n"))?;
+    patch.write_fmt(format_args!("\t\t\t\tthis._update();\n"))?;
+    patch.write_fmt(format_args!("\t\t\t\tthis.drawables.opacities.forEach((_, i, opacities) => {{\n"))?;
+    patch.write_fmt(format_args!("\t\t\t\t\tif (\n"))?;
+    patch.write_fmt(format_args!("\t\t\t\t\t\tthis.drawables.parentPartIndices[i] == 3 ||\n"))?;
+    patch.write_fmt(format_args!("\t\t\t\t\t\tthis.drawables.parentPartIndices[i] == 5\n"))?;
+    patch.write_fmt(format_args!("\t\t\t\t\t) opacities[i] = 0;\n"))?;
+    patch.write_fmt(format_args!("\t\t\t\t}});\n"))?;
+    patch.write_fmt(format_args!("\t\t\t}};\n"))?;
 
     for entry in WalkDir::new("asset/image/live2d")
         .into_iter()
@@ -42,7 +53,9 @@ fn main() -> anyhow::Result<()> {
                         serde_json::from_str::<Value>(&fs::read_to_string(path)?)?
                         ["FileReferences"]["DisplayInfo"].as_str().unwrap()))?
                 )?["Parts"].as_array().unwrap().iter().enumerate() {
-                    if part["Name"].as_str().unwrap().contains("雾") {
+                    if part["Name"].as_str().unwrap() == "效果组" ||
+                       part["Name"].as_str().unwrap().contains("雾")
+                    {
                         result.push(i);
                     }
                 }
