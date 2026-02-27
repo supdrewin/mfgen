@@ -1,0 +1,9 @@
+[package]
+name = "mfgen"
+version = "0.0.0"
+edition = "2024"
+
+[dependencies]
+anyhow = "*"
+walkdir = "*"
+serde_json = "*"
