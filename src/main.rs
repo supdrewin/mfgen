@@ -1,13 +1,14 @@
 use std::ffi::OsStr;
 use std::fs;
 use std::fs::OpenOptions;
+use std::io;
 use std::io::Write;
 
 use serde_json::Value;
 use walkdir::WalkDir;
 
 #[rustfmt::skip]
-fn main() -> anyhow::Result<()> {
+fn main() -> io::Result<()> {
     let mut patch = OpenOptions::new()
         .create(true)
         .write(true)
@@ -46,7 +47,7 @@ fn main() -> anyhow::Result<()> {
 
         match path.file_name().map(OsStr::to_str).flatten().as_deref() {
             Some(name) if name.ends_with(".model3.json") => {
-                let mut result: Vec<usize> = vec![];
+                let mut result = vec![];
 
                 for (i, part) in serde_json::from_str::<Value>(
                     &fs::read_to_string(path.parent().unwrap().join(
@@ -83,7 +84,7 @@ fn main() -> anyhow::Result<()> {
                 }
             }
             _ => (),
-        };
+        }
     }
 
     patch.write_fmt(format_args!("\t\t}} else if (Live2DCubismCore.Model.prototype._update) {{\n"))?;

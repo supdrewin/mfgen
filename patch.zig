@@ -16,18 +16,27 @@ pub fn main() !void {
     }
 
     {
-        const file = try std.fs.createFileAbsolute(try std.fs.path.join(allocator, &.{ game, "index.html" }), .{});
+        const path = try std.fs.path.join(allocator, &.{ game, "index.html" });
+        defer allocator.free(path);
+
+        const file = try std.fs.createFileAbsolute(path, .{});
         defer file.close();
 
         _ = try file.write(index);
     }
 
     {
-        const file = try std.fs.createFileAbsolute(try std.fs.path.join(allocator, &.{ game, "patch.js" }), .{});
+        const path = try std.fs.path.join(allocator, &.{ game, "patch.js" });
+        defer allocator.free(path);
+
+        const file = try std.fs.createFileAbsolute(path, .{});
         defer file.close();
 
         _ = try file.write(patch);
     }
 
-    try std.fs.deleteFileAbsolute(try std.fs.path.join(allocator, &.{ game, ".grp" }));
+    const path = try std.fs.path.join(allocator, &.{ game, ".grp" });
+    defer allocator.free(path);
+
+    std.fs.deleteFileAbsolute(path) catch {};
 }
