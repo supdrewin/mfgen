@@ -1,18 +1,14 @@
+use std::collections::BTreeMap;
 use std::ffi::OsStr;
 use std::fs;
-use std::fs::OpenOptions;
-use std::io;
-use std::io::Write;
+use std::io::{self, Write as _};
 
 use serde_json::Value;
 use walkdir::WalkDir;
 
-#[rustfmt::skip]
 fn main() -> io::Result<()> {
-    let mut patch = OpenOptions::new()
-        .create(true)
-        .write(true)
-        .open("patch.js")?;
+    let mut patch = fs::OpenOptions::new().create(true).truncate(true).write(true).open("patch.js")?;
+    let mut map = BTreeMap::new();
 
     patch.write_fmt(format_args!("// Generated from: https://github.com/supdrewin/mfgen\n"))?;
     patch.write_fmt(format_args!("var id = setInterval(() => {{\n"))?;
@@ -27,64 +23,61 @@ fn main() -> io::Result<()> {
     patch.write_fmt(format_args!("\t\t\t\t\tif (this.drawables.parentPartIndices[i] < 0) opacities[i] = 0;\n"))?;
     patch.write_fmt(format_args!("\t\t\t\t}});\n"))?;
     patch.write_fmt(format_args!("\t\t\t}};\n"))?;
-    patch.write_fmt(format_args!("\t\t}} else if (fileName == \"ys_suxi.model3.json\") {{\n"))?;
-    patch.write_fmt(format_args!("\t\t\tLive2DCubismCore.Model.prototype._update ??= Live2DCubismCore.Model.prototype.update;\n"))?;
-    patch.write_fmt(format_args!("\t\t\tLive2DCubismCore.Model.prototype.update = function () {{\n"))?;
-    patch.write_fmt(format_args!("\t\t\t\tthis._update();\n"))?;
-    patch.write_fmt(format_args!("\t\t\t\tthis.drawables.opacities.forEach((_, i, opacities) => {{\n"))?;
-    patch.write_fmt(format_args!("\t\t\t\t\tif (\n"))?;
-    patch.write_fmt(format_args!("\t\t\t\t\t\tthis.drawables.parentPartIndices[i] == 3 ||\n"))?;
-    patch.write_fmt(format_args!("\t\t\t\t\t\tthis.drawables.parentPartIndices[i] == 5\n"))?;
-    patch.write_fmt(format_args!("\t\t\t\t\t) opacities[i] = 0;\n"))?;
-    patch.write_fmt(format_args!("\t\t\t\t}});\n"))?;
-    patch.write_fmt(format_args!("\t\t\t}};\n"))?;
 
-    for entry in WalkDir::new("asset/image/live2d")
-        .into_iter()
-        .filter_map(Result::ok)
-    {
+    for entry in WalkDir::new("asset/image/live2d").into_iter().filter_map(Result::ok) {
         let path = entry.path();
 
-        match path.file_name().map(OsStr::to_str).flatten().as_deref() {
+        match path.file_name().map(OsStr::to_str).flatten() {
             Some(name) if name.ends_with(".model3.json") => {
-                let mut result = vec![];
+                let mut _parts = vec![];
 
-                for (i, part) in serde_json::from_str::<Value>(
-                    &fs::read_to_string(path.parent().unwrap().join(
-                        serde_json::from_str::<Value>(&fs::read_to_string(path)?)?
-                        ["FileReferences"]["DisplayInfo"].as_str().unwrap()))?
-                )?["Parts"].as_array().unwrap().iter().enumerate() {
-                    if part["Name"].as_str().unwrap() == "效果组" ||
-                       part["Name"].as_str().unwrap().contains("雾")
-                    {
-                        result.push(i);
+                let json = serde_json::from_str::<Value>(&fs::read_to_string(path)?)?;
+                let path = path.parent().unwrap().join(json["FileReferences"]["DisplayInfo"].as_str().unwrap());
+
+                let json = serde_json::from_str::<Value>(&fs::read_to_string(path)?)?;
+                let parts = json["Parts"].as_array().unwrap();
+
+                for (i, part) in parts.iter().enumerate() {
+                    let name = part["Name"].as_str().unwrap();
+
+                    if name == "效果组" || name.contains("雾") {
+                        _parts.push(i);
                     }
                 }
 
-                if !result.is_empty() {
-                    let i = result.pop().unwrap();
-
-                    patch.write_fmt(format_args!("\t\t}} else if (fileName == \"{name}\") {{\n"))?;
-                    patch.write_fmt(format_args!("\t\t\tLive2DCubismCore.Model.prototype._update ??= Live2DCubismCore.Model.prototype.update;\n"))?;
-                    patch.write_fmt(format_args!("\t\t\tLive2DCubismCore.Model.prototype.update = function () {{\n"))?;
-                    patch.write_fmt(format_args!("\t\t\t\tthis._update();\n"))?;
-                    patch.write_fmt(format_args!("\t\t\t\tthis.drawables.opacities.forEach((_, i, opacities) => {{\n"))?;
-                    patch.write_fmt(format_args!("\t\t\t\t\tif (\n"))?;
-
-                    for i in result {
-                        patch.write_fmt(format_args!(
-                            "\t\t\t\t\t\tthis.drawables.parentPartIndices[i] == {i} ||\n"
-                        ))?;
-                    }
-
-                    patch.write_fmt(format_args!("\t\t\t\t\t\tthis.drawables.parentPartIndices[i] == {i}\n"))?;
-                    patch.write_fmt(format_args!("\t\t\t\t\t) opacities[i] = 0;\n"))?;
-                    patch.write_fmt(format_args!("\t\t\t\t}});\n"))?;
-                    patch.write_fmt(format_args!("\t\t\t}};\n"))?;
-                }
+                map.insert(name.to_string(), _parts);
             }
             _ => (),
         }
+    }
+
+    map.insert("LH_MengYao.model3.json".to_string(), vec![0]);
+    map.insert("ys_suxi.model3.json".to_string(), vec![3, 5]);
+
+    for (name, mut parts) in map.into_iter().filter(|(_, parts)| !parts.is_empty()) {
+        let i = parts.pop().unwrap();
+
+        patch.write_fmt(format_args!("\t\t}} else if (fileName == \"{name}\") {{\n"))?;
+        patch.write_fmt(format_args!("\t\t\tLive2DCubismCore.Model.prototype._update ??= Live2DCubismCore.Model.prototype.update;\n"))?;
+        patch.write_fmt(format_args!("\t\t\tLive2DCubismCore.Model.prototype.update = function () {{\n"))?;
+        patch.write_fmt(format_args!("\t\t\t\tthis._update();\n"))?;
+        patch.write_fmt(format_args!("\t\t\t\tthis.drawables.opacities.forEach((_, i, opacities) => {{\n"))?;
+
+        if parts.is_empty() {
+            patch.write_fmt(format_args!("\t\t\t\t\tif (this.drawables.parentPartIndices[i] == {i}) opacities[i] = 0;\n"))?;
+        } else {
+            patch.write_fmt(format_args!("\t\t\t\t\tif (\n"))?;
+
+            for i in parts {
+                patch.write_fmt(format_args!("\t\t\t\t\t\tthis.drawables.parentPartIndices[i] == {i} ||\n"))?;
+            }
+
+            patch.write_fmt(format_args!("\t\t\t\t\t\tthis.drawables.parentPartIndices[i] == {i}\n"))?;
+            patch.write_fmt(format_args!("\t\t\t\t\t) opacities[i] = 0;\n"))?;
+        }
+
+        patch.write_fmt(format_args!("\t\t\t\t}});\n"))?;
+        patch.write_fmt(format_args!("\t\t\t}};\n"))?;
     }
 
     patch.write_fmt(format_args!("\t\t}} else if (Live2DCubismCore.Model.prototype._update) {{\n"))?;
