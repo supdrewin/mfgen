@@ -54,6 +54,8 @@ fn main() -> io::Result<()> {
     map.insert("LH_MengYao.model3.json".to_string(), vec![0]);
     map.insert("ys_suxi.model3.json".to_string(), vec![3, 5]);
 
+    map.remove("HSQ_MengYao.model3.json");
+
     for (name, mut parts) in map.into_iter().filter(|(_, parts)| !parts.is_empty()) {
         let i = parts.pop().unwrap();
 
