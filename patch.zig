@@ -9,11 +9,7 @@ pub fn main() !void {
     const args = try std.process.argsAlloc(allocator);
     defer allocator.free(args);
 
-    var game: [:0]const u8 = "C:\\Program Files (x86)\\Steam\\steamapps\\common\\METEORITEFALL\\Game";
-
-    if (args.len == 2) {
-        game = args[1];
-    }
+    const game = if (args.len == 2) args[1] else "C:\\Program Files (x86)\\Steam\\steamapps\\common\\METEORITEFALL\\Game";
 
     {
         const path = try std.fs.path.join(allocator, &.{ game, "index.html" });
@@ -35,8 +31,17 @@ pub fn main() !void {
         _ = try file.write(patch);
     }
 
-    const path = try std.fs.path.join(allocator, &.{ game, ".grp" });
-    defer allocator.free(path);
+    // replace `std.fs.deleteFileAbsolute` to decrease executable size (save ~200KB)
+    {
+        const __path = try std.fs.path.join(allocator, &.{ game, ".grp" });
+        defer allocator.free(__path);
 
-    std.fs.deleteFileAbsolute(path) catch {};
+        const _path = try std.fmt.allocPrint(allocator, "\\??\\{s}", .{__path});
+        defer allocator.free(_path);
+
+        const path = try std.unicode.wtf8ToWtf16LeAlloc(allocator, _path);
+        defer allocator.free(path);
+
+        std.os.windows.DeleteFile(path, .{ .dir = null }) catch {};
+    }
 }

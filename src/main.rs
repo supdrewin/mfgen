@@ -45,7 +45,9 @@ fn main() -> io::Result<()> {
                     }
                 }
 
-                map.insert(name.to_string(), _parts);
+                if !_parts.is_empty() {
+                    map.insert(name.to_string(), _parts);
+                }
             }
             _ => (),
         }
@@ -56,7 +58,7 @@ fn main() -> io::Result<()> {
 
     map.remove("HSQ_MengYao.model3.json");
 
-    for (name, mut parts) in map.into_iter().filter(|(_, parts)| !parts.is_empty()) {
+    for (name, mut parts) in map {
         let i = parts.pop().unwrap();
 
         patch.write_fmt(format_args!("\t\t}} else if (fileName == \"{name}\") {{\n"))?;
