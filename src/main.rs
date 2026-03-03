@@ -10,19 +10,19 @@ fn main() -> io::Result<()> {
     let mut patch = fs::OpenOptions::new().create(true).truncate(true).write(true).open("patch.js")?;
     let mut map = BTreeMap::new();
 
-    patch.write_fmt(format_args!("// Generated from: https://github.com/supdrewin/mfgen\n"))?;
-    patch.write_fmt(format_args!("var id = setInterval(() => {{\n"))?;
-    patch.write_fmt(format_args!("\tLAppModel.prototype._loadAssets = LAppModel.prototype.loadAssets;\n"))?;
-    patch.write_fmt(format_args!("\tLAppModel.prototype.loadAssets = function (dir, fileName) {{\n"))?;
-    patch.write_fmt(format_args!("\t\tthis._loadAssets(dir, fileName);\n"))?;
-    patch.write_fmt(format_args!("\t\tif (fileName == \"SH_JinYueShi.model3.json\") {{\n"))?;
-    patch.write_fmt(format_args!("\t\t\tLive2DCubismCore.Model.prototype._update ??= Live2DCubismCore.Model.prototype.update;\n"))?;
-    patch.write_fmt(format_args!("\t\t\tLive2DCubismCore.Model.prototype.update = function () {{\n"))?;
-    patch.write_fmt(format_args!("\t\t\t\tthis._update();\n"))?;
-    patch.write_fmt(format_args!("\t\t\t\tthis.drawables.opacities.forEach((_, i, opacities) => {{\n"))?;
-    patch.write_fmt(format_args!("\t\t\t\t\tif (this.drawables.parentPartIndices[i] < 0) opacities[i] = 0;\n"))?;
-    patch.write_fmt(format_args!("\t\t\t\t}});\n"))?;
-    patch.write_fmt(format_args!("\t\t\t}};\n"))?;
+    writeln!(&mut patch, "// Generated from: https://github.com/supdrewin/mfgen")?;
+    writeln!(&mut patch, "var id = setInterval(() => {{")?;
+    writeln!(&mut patch, "\tLAppModel.prototype._loadAssets = LAppModel.prototype.loadAssets;")?;
+    writeln!(&mut patch, "\tLAppModel.prototype.loadAssets = function (dir, fileName) {{")?;
+    writeln!(&mut patch, "\t\tthis._loadAssets(dir, fileName);")?;
+    writeln!(&mut patch, "\t\tif (fileName == \"SH_JinYueShi.model3.json\") {{")?;
+    writeln!(&mut patch, "\t\t\tLive2DCubismCore.Model.prototype._update ??= Live2DCubismCore.Model.prototype.update;")?;
+    writeln!(&mut patch, "\t\t\tLive2DCubismCore.Model.prototype.update = function () {{")?;
+    writeln!(&mut patch, "\t\t\t\tthis._update();")?;
+    writeln!(&mut patch, "\t\t\t\tthis.drawables.opacities.forEach((_, i, opacities) => {{")?;
+    writeln!(&mut patch, "\t\t\t\t\tif (this.drawables.parentPartIndices[i] < 0) opacities[i] = 0;")?;
+    writeln!(&mut patch, "\t\t\t\t}});")?;
+    writeln!(&mut patch, "\t\t\t}};")?;
 
     for entry in WalkDir::new("asset/image/live2d").into_iter().filter_map(Result::ok) {
         let path = entry.path();
@@ -61,35 +61,35 @@ fn main() -> io::Result<()> {
     for (name, mut parts) in map {
         let i = parts.pop().unwrap();
 
-        patch.write_fmt(format_args!("\t\t}} else if (fileName == \"{name}\") {{\n"))?;
-        patch.write_fmt(format_args!("\t\t\tLive2DCubismCore.Model.prototype._update ??= Live2DCubismCore.Model.prototype.update;\n"))?;
-        patch.write_fmt(format_args!("\t\t\tLive2DCubismCore.Model.prototype.update = function () {{\n"))?;
-        patch.write_fmt(format_args!("\t\t\t\tthis._update();\n"))?;
-        patch.write_fmt(format_args!("\t\t\t\tthis.drawables.opacities.forEach((_, i, opacities) => {{\n"))?;
+        writeln!(&mut patch, "\t\t}} else if (fileName == \"{name}\") {{")?;
+        writeln!(&mut patch, "\t\t\tLive2DCubismCore.Model.prototype._update ??= Live2DCubismCore.Model.prototype.update;")?;
+        writeln!(&mut patch, "\t\t\tLive2DCubismCore.Model.prototype.update = function () {{")?;
+        writeln!(&mut patch, "\t\t\t\tthis._update();")?;
+        writeln!(&mut patch, "\t\t\t\tthis.drawables.opacities.forEach((_, i, opacities) => {{")?;
 
         if parts.is_empty() {
-            patch.write_fmt(format_args!("\t\t\t\t\tif (this.drawables.parentPartIndices[i] == {i}) opacities[i] = 0;\n"))?;
+            writeln!(&mut patch, "\t\t\t\t\tif (this.drawables.parentPartIndices[i] == {i}) opacities[i] = 0;")?;
         } else {
-            patch.write_fmt(format_args!("\t\t\t\t\tif (\n"))?;
+            writeln!(&mut patch, "\t\t\t\t\tif (")?;
 
             for i in parts {
-                patch.write_fmt(format_args!("\t\t\t\t\t\tthis.drawables.parentPartIndices[i] == {i} ||\n"))?;
+                writeln!(&mut patch, "\t\t\t\t\t\tthis.drawables.parentPartIndices[i] == {i} ||")?;
             }
 
-            patch.write_fmt(format_args!("\t\t\t\t\t\tthis.drawables.parentPartIndices[i] == {i}\n"))?;
-            patch.write_fmt(format_args!("\t\t\t\t\t) opacities[i] = 0;\n"))?;
+            writeln!(&mut patch, "\t\t\t\t\t\tthis.drawables.parentPartIndices[i] == {i}")?;
+            writeln!(&mut patch, "\t\t\t\t\t) opacities[i] = 0;")?;
         }
 
-        patch.write_fmt(format_args!("\t\t\t\t}});\n"))?;
-        patch.write_fmt(format_args!("\t\t\t}};\n"))?;
+        writeln!(&mut patch, "\t\t\t\t}});")?;
+        writeln!(&mut patch, "\t\t\t}};")?;
     }
 
-    patch.write_fmt(format_args!("\t\t}} else if (Live2DCubismCore.Model.prototype._update) {{\n"))?;
-    patch.write_fmt(format_args!("\t\t\tLive2DCubismCore.Model.prototype.update = Live2DCubismCore.Model.prototype._update;\n"))?;
-    patch.write_fmt(format_args!("\t\t}}\n"))?;
-    patch.write_fmt(format_args!("\t}};\n"))?;
-    patch.write_fmt(format_args!("\tclearInterval(id);\n"))?;
-    patch.write_fmt(format_args!("}}, 1000);\n"))?;
+    writeln!(&mut patch, "\t\t}} else if (Live2DCubismCore.Model.prototype._update) {{")?;
+    writeln!(&mut patch, "\t\t\tLive2DCubismCore.Model.prototype.update = Live2DCubismCore.Model.prototype._update;")?;
+    writeln!(&mut patch, "\t\t}}")?;
+    writeln!(&mut patch, "\t}};")?;
+    writeln!(&mut patch, "\tclearInterval(id);")?;
+    writeln!(&mut patch, "}}, 1000);")?;
 
     Ok(())
 }

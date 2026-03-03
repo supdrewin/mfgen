@@ -4,3 +4,4 @@ target/
 .DS_Store
 patch.exe
 patch.js
+Cargo.lock
