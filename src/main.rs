@@ -11,10 +11,14 @@ fn main() -> io::Result<()> {
     let mut map = BTreeMap::new();
 
     writeln!(&mut patch, "// Generated from: https://github.com/supdrewin/mfgen")?;
+    writeln!(&mut patch, "// Current version: v{}", env!("CARGO_PKG_VERSION"))?;
     writeln!(&mut patch, "var id = setInterval(() => {{")?;
     writeln!(&mut patch, "\tLAppModel.prototype._loadAssets = LAppModel.prototype.loadAssets;")?;
     writeln!(&mut patch, "\tLAppModel.prototype.loadAssets = function (dir, fileName) {{")?;
     writeln!(&mut patch, "\t\tthis._loadAssets(dir, fileName);")?;
+    writeln!(&mut patch, "\t\tif (Live2DCubismCore.Model.prototype._update) {{")?;
+    writeln!(&mut patch, "\t\t\tLive2DCubismCore.Model.prototype.update = Live2DCubismCore.Model.prototype._update;")?;
+    writeln!(&mut patch, "\t\t}}")?;
     writeln!(&mut patch, "\t\tif (fileName == \"SH_JinYueShi.model3.json\") {{")?;
     writeln!(&mut patch, "\t\t\tLive2DCubismCore.Model.prototype._update ??= Live2DCubismCore.Model.prototype.update;")?;
     writeln!(&mut patch, "\t\t\tLive2DCubismCore.Model.prototype.update = function () {{")?;
@@ -58,34 +62,20 @@ fn main() -> io::Result<()> {
 
     map.remove("HSQ_MengYao.model3.json");
 
-    for (name, mut parts) in map {
-        let i = parts.pop().unwrap();
-
+    for (name, parts) in map {
         writeln!(&mut patch, "\t\t}} else if (fileName == \"{name}\") {{")?;
-        writeln!(&mut patch, "\t\t\tLive2DCubismCore.Model.prototype._update ??= Live2DCubismCore.Model.prototype.update;")?;
-        writeln!(&mut patch, "\t\t\tLive2DCubismCore.Model.prototype.update = function () {{")?;
-        writeln!(&mut patch, "\t\t\t\tthis._update();")?;
-        writeln!(&mut patch, "\t\t\t\tthis.drawables.opacities.forEach((_, i, opacities) => {{")?;
+        writeln!(&mut patch, "\t\t\tLAppModel.prototype._loadModel ??= LAppModel.prototype.loadModel;")?;
+        writeln!(&mut patch, "\t\t\tLAppModel.prototype.loadModel = function (buffer, shouldCheckMocConsistency) {{")?;
+        writeln!(&mut patch, "\t\t\t\tthis._loadModel(buffer, shouldCheckMocConsistency);")?;
 
-        if parts.is_empty() {
-            writeln!(&mut patch, "\t\t\t\t\tif (this.drawables.parentPartIndices[i] == {i}) opacities[i] = 0;")?;
-        } else {
-            writeln!(&mut patch, "\t\t\t\t\tif (")?;
-
-            for i in parts {
-                writeln!(&mut patch, "\t\t\t\t\t\tthis.drawables.parentPartIndices[i] == {i} ||")?;
-            }
-
-            writeln!(&mut patch, "\t\t\t\t\t\tthis.drawables.parentPartIndices[i] == {i}")?;
-            writeln!(&mut patch, "\t\t\t\t\t) opacities[i] = 0;")?;
+        for i in parts {
+            writeln!(&mut patch, "\t\t\t\tthis._model.setPartOpacityByIndex({i}, 0);")?;
         }
 
-        writeln!(&mut patch, "\t\t\t\t}});")?;
+        writeln!(&mut patch, "\t\t\t\tLAppModel.prototype.loadModel = LAppModel.prototype._loadModel;")?;
         writeln!(&mut patch, "\t\t\t}};")?;
     }
 
-    writeln!(&mut patch, "\t\t}} else if (Live2DCubismCore.Model.prototype._update) {{")?;
-    writeln!(&mut patch, "\t\t\tLive2DCubismCore.Model.prototype.update = Live2DCubismCore.Model.prototype._update;")?;
     writeln!(&mut patch, "\t\t}}")?;
     writeln!(&mut patch, "\t}};")?;
     writeln!(&mut patch, "\tclearInterval(id);")?;
