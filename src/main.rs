@@ -15,7 +15,6 @@ fn main() -> io::Result<()> {
     writeln!(&mut patch, "var id = setInterval(() => {{")?;
     writeln!(&mut patch, "\tLAppModel.prototype._loadAssets = LAppModel.prototype.loadAssets;")?;
     writeln!(&mut patch, "\tLAppModel.prototype.loadAssets = function (dir, fileName) {{")?;
-    writeln!(&mut patch, "\t\tthis._loadAssets(dir, fileName);")?;
     writeln!(&mut patch, "\t\tif (Live2DCubismCore.Model.prototype._update) {{")?;
     writeln!(&mut patch, "\t\t\tLive2DCubismCore.Model.prototype.update = Live2DCubismCore.Model.prototype._update;")?;
     writeln!(&mut patch, "\t\t}}")?;
@@ -77,6 +76,7 @@ fn main() -> io::Result<()> {
     }
 
     writeln!(&mut patch, "\t\t}}")?;
+    writeln!(&mut patch, "\t\tthis._loadAssets(dir, fileName);")?;
     writeln!(&mut patch, "\t}};")?;
     writeln!(&mut patch, "\tclearInterval(id);")?;
     writeln!(&mut patch, "}}, 1000);")?;
