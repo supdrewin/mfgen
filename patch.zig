@@ -8,7 +8,7 @@ const patch = "<script type=\"text/javascript\" src=\"patch.js";
 
 pub fn main() !void {
     const args = try std.process.argsAlloc(allocator);
-    defer allocator.free(args);
+    defer std.process.argsFree(allocator, args);
 
     const game = if (args.len == 2) args[1] else "C:\\Program Files (x86)\\Steam\\steamapps\\common\\METEORITEFALL\\Game";
 
