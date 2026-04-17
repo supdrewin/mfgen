@@ -1,6 +1,6 @@
 pub fn main(init: std.process.Init) !void {
-    var map: std.StringArrayHashMap([]const usize) = .init(init.gpa);
-    defer map.deinit();
+    var map: std.array_hash_map.String([]const usize) = .empty;
+    defer map.deinit(init.gpa);
 
     var dir = try std.Io.Dir.cwd().openDir(init.io, "asset/image/live2d", .{ .iterate = true });
     defer dir.close(init.io);
@@ -33,14 +33,15 @@ pub fn main(init: std.process.Init) !void {
             }
 
             if (parts.items.len != 0) try map.put(
+                init.gpa,
                 try std.ascii.allocLowerString(allocator, entry.basename),
                 try parts.toOwnedSlice(allocator),
             );
         }
     }
 
-    try map.put("lh_mengyao.model3.json", &.{0});
-    try map.put("ys_suxi.model3.json", &.{ 3, 5 });
+    try map.put(init.gpa, "lh_mengyao.model3.json", &.{0});
+    try map.put(init.gpa, "ys_suxi.model3.json", &.{ 3, 5 });
 
     _ = map.swapRemove("hsq_mengyao.model3.json");
     _ = map.swapRemove("wq_cg.model3.json");

@@ -5,12 +5,11 @@ pub fn main(init: std.process.Init) !void {
     var dir = try std.Io.Dir.openDirAbsolute(init.io, game, .{});
     defer dir.close(init.io);
 
-    var buffer: [1024]u8 = undefined;
-
     _: {
         const file = try dir.openFile(init.io, "index.html", .{ .mode = .read_write });
         defer file.close(init.io);
 
+        var buffer: [1024]u8 = undefined;
         var reader = file.reader(init.io, &buffer);
 
         const script = "<script type=\"text/javascript\" src=\"script.js";
@@ -29,7 +28,7 @@ pub fn main(init: std.process.Init) !void {
         const remaining = try reader.interface.allocRemaining(init.gpa, .unlimited);
         defer init.gpa.free(remaining);
 
-        var writer = file.writer(init.io, &buffer);
+        var writer = file.writer(init.io, "");
 
         try writer.seekTo(pos);
 
@@ -41,7 +40,7 @@ pub fn main(init: std.process.Init) !void {
         const file = try dir.createFile(init.io, "patch.js", .{});
         defer file.close(init.io);
 
-        var writer = file.writer(init.io, &buffer);
+        var writer = file.writer(init.io, "");
 
         try writer.interface.writeAll(@embedFile("patch.js"));
     }
